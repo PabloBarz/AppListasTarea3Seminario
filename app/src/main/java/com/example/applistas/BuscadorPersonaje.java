@@ -1,7 +1,9 @@
 package com.example.applistas;
 
+import android.graphics.Bitmap;
 import android.os.Bundle;
 import android.util.Log;
+import android.util.LruCache;
 import android.widget.Button;
 import android.widget.EditText;
 import android.widget.Toast;
@@ -16,7 +18,9 @@ import com.android.volley.NetworkResponse;
 import com.android.volley.Request;
 import com.android.volley.RequestQueue;
 import com.android.volley.VolleyError;
+import com.android.volley.toolbox.ImageLoader;
 import com.android.volley.toolbox.JsonObjectRequest;
+import com.android.volley.toolbox.NetworkImageView;
 import com.android.volley.toolbox.Volley;
 
 import org.json.JSONException;
@@ -29,6 +33,7 @@ public class BuscadorPersonaje extends AppCompatActivity {
 
     EditText edtIdPersonaje, edtNombre, edtKi, edtRaza, edtGenero;
     Button btnBuscarPersonaje, btnLimpiar;
+    NetworkImageView imgPersonaje;
 
     private void loadUI(){
         edtIdPersonaje = findViewById(R.id.edtIdPersonaje);
@@ -38,6 +43,7 @@ public class BuscadorPersonaje extends AppCompatActivity {
         edtGenero = findViewById(R.id.edtGenero);
         edtRaza = findViewById(R.id.edtRaza);
         edtKi = findViewById(R.id.edtKi);
+        imgPersonaje = findViewById(R.id.imgPersonaje);
     }
 
     @Override
@@ -62,6 +68,7 @@ public class BuscadorPersonaje extends AppCompatActivity {
         edtKi.setText("");
         edtRaza.setText("");
         edtGenero.setText("");
+        imgPersonaje.setImageUrl(null,null);
         edtIdPersonaje.requestFocus();
     }
 
@@ -105,12 +112,28 @@ public class BuscadorPersonaje extends AppCompatActivity {
             String ki = jsonObject.optString("ki", "0");
             String raza = jsonObject.optString("race", "Desconocida");
             String genero = jsonObject.optString("gender", "No especificado");
+            String imageUrl = jsonObject.optString("image", "Imagen no disponible");
 
             // 2. Asignar los valores a la interfaz de usuario (UI)
             edtNombre.setText(nombre);
             edtKi.setText(ki);
             edtRaza.setText(raza);
             edtGenero.setText(genero);
+
+            // 3. Cargar la imagen utilizando el ImageLoader de Volley
+            ImageLoader imageLoader = new ImageLoader(requestQueue, new ImageLoader.ImageCache() {
+                private final LruCache<String, Bitmap> cache = new LruCache<>(20);
+                @Override
+                public Bitmap getBitmap(String url) {
+                    return cache.get(url);
+                }
+                @Override
+                public void putBitmap(String url, Bitmap bitmap) {
+                    cache.put(url, bitmap);
+                }
+            });
+
+            imgPersonaje.setImageUrl(imageUrl, imageLoader);
 
         } catch (Exception e) {
             Log.e("ResultadoWS", "Error al procesar los datos del personaje", e);

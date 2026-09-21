@@ -23,6 +23,7 @@ import com.android.volley.toolbox.JsonObjectRequest;
 import com.android.volley.toolbox.NetworkImageView;
 import com.android.volley.toolbox.Volley;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -32,12 +33,14 @@ public class BuscadorPersonaje extends AppCompatActivity {
     final String URL = "https://dragonball-api.com/api/characters/";
 
     EditText edtIdPersonaje, edtNombre, edtKi, edtRaza, edtGenero;
-    Button btnBuscarPersonaje, btnLimpiar;
+    Button btnBuscarPersonaje, btnLimpiar, btnTransformaciones;
     NetworkImageView imgPersonaje;
+    JSONArray transformacionesArray;
 
     private void loadUI(){
         edtIdPersonaje = findViewById(R.id.edtIdPersonaje);
         btnBuscarPersonaje = findViewById(R.id.btnBuscarPersonaje);
+        btnTransformaciones = findViewById(R.id.btnTransformaciones);
         btnLimpiar = findViewById(R.id.btnLimpiar);
         edtNombre = findViewById(R.id.edtNombre);
         edtGenero = findViewById(R.id.edtGenero);
@@ -60,6 +63,7 @@ public class BuscadorPersonaje extends AppCompatActivity {
         //Eventos
         btnBuscarPersonaje.setOnClickListener(v -> {getDataCharacter();});
         btnLimpiar.setOnClickListener(v -> {clearForm();});
+        btnTransformaciones.setOnClickListener(v -> {showTransformations();});
     }
 
     private void clearForm(){
@@ -69,6 +73,7 @@ public class BuscadorPersonaje extends AppCompatActivity {
         edtRaza.setText("");
         edtGenero.setText("");
         imgPersonaje.setImageUrl(null,null);
+        btnTransformaciones.setEnabled(false);
         edtIdPersonaje.requestFocus();
     }
 
@@ -102,6 +107,32 @@ public class BuscadorPersonaje extends AppCompatActivity {
         requestQueue.add(jsonObjectRequest);
     }
 
+    private void showTransformations(){
+        if (transformacionesArray == null || transformacionesArray.length() == 0) {
+            return;
+        }
+
+        StringBuilder listaNombres = new StringBuilder();
+
+        try {
+            for (int i=0; i < transformacionesArray.length();i++){
+                JSONObject transformacion = transformacionesArray.getJSONObject(i);
+                String nombreTransformacion = transformacion.getString("name");
+
+                listaNombres.append(nombreTransformacion);
+                if (i < transformacionesArray.length() - 1) {
+                    listaNombres.append(", ");
+                }
+            }
+
+            setMessage("Transformaciones:\n" + listaNombres.toString());
+
+        }catch (JSONException e){
+            Log.e("Transformaciones", "Error al leer transformaciones", e);
+            setMessage("Fallo en encontrar trasnforaciones");
+        }
+    }
+
     private void showData(JSONObject jsonObject) {
         Log.d("ResultadoWS", jsonObject.toString());
 
@@ -119,6 +150,13 @@ public class BuscadorPersonaje extends AppCompatActivity {
             edtKi.setText(ki);
             edtRaza.setText(raza);
             edtGenero.setText(genero);
+            transformacionesArray = jsonObject.optJSONArray("transformations");
+
+            if (transformacionesArray != null && transformacionesArray.length() > 0) {
+                btnTransformaciones.setEnabled(true);
+            } else {
+                btnTransformaciones.setEnabled(false);
+            }
 
             // 3. Cargar la imagen utilizando el ImageLoader de Volley
             ImageLoader imageLoader = new ImageLoader(requestQueue, new ImageLoader.ImageCache() {

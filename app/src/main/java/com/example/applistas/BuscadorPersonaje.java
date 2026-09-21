@@ -28,11 +28,12 @@ public class BuscadorPersonaje extends AppCompatActivity {
     final String URL = "https://dragonball-api.com/api/characters/";
 
     EditText edtIdPersonaje, edtNombre, edtKi, edtRaza, edtGenero;
-    Button btnBuscarPersonaje;
+    Button btnBuscarPersonaje, btnLimpiar;
 
     private void loadUI(){
         edtIdPersonaje = findViewById(R.id.edtIdPersonaje);
         btnBuscarPersonaje = findViewById(R.id.btnBuscarPersonaje);
+        btnLimpiar = findViewById(R.id.btnLimpiar);
         edtNombre = findViewById(R.id.edtNombre);
         edtGenero = findViewById(R.id.edtGenero);
         edtRaza = findViewById(R.id.edtRaza);
@@ -47,9 +48,27 @@ public class BuscadorPersonaje extends AppCompatActivity {
 
         this.loadUI();
 
+        //Abrir canal de comunicacion
+        requestQueue = Volley.newRequestQueue(this);
+
         //Eventos
         btnBuscarPersonaje.setOnClickListener(v -> {getDataCharacter();});
+        btnLimpiar.setOnClickListener(v -> {clearForm();});
     }
+
+    private void clearForm(){
+        edtIdPersonaje.setText("");
+        edtNombre.setText("");
+        edtKi.setText("");
+        edtRaza.setText("");
+        edtGenero.setText("");
+        edtIdPersonaje.requestFocus();
+    }
+
+    private void setMessage(String message){
+        Toast.makeText(this, message, Toast.LENGTH_SHORT).show();
+    }
+
 
     private void getDataCharacter() {
         //Comunicaion Dragon Ball API
@@ -60,10 +79,6 @@ public class BuscadorPersonaje extends AppCompatActivity {
         }
 
         String endPoint = URL + edtIdPersonaje.getText().toString();
-
-        //Abrir canal de comunicacion
-
-        requestQueue = Volley.newRequestQueue(this);
 
         //¿Que tipo de dato me devuelve el API?
         //Volley las solicitudes tienen 5 partes;
@@ -99,7 +114,7 @@ public class BuscadorPersonaje extends AppCompatActivity {
 
         } catch (Exception e) {
             Log.e("ResultadoWS", "Error al procesar los datos del personaje", e);
-            Toast.makeText(this, "Error al cargar la información", Toast.LENGTH_SHORT).show();
+            setMessage("Error al cargar la información");
         }
     }
 
@@ -120,8 +135,9 @@ public class BuscadorPersonaje extends AppCompatActivity {
                 String dataError = new String(response.data);
                 try {
                     JSONObject jsonObject = new JSONObject(dataError);
-                    Toast.makeText(this, jsonObject.getString("message"), Toast.LENGTH_SHORT).show();
+                    setMessage(jsonObject.getString("message"));
                     Log.e("ErrorWS", dataError);
+                    clearForm();
                 } catch (JSONException e) {
                     throw new RuntimeException(e);
                 }
